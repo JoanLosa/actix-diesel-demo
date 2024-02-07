@@ -1,9 +1,8 @@
-use actix_web::{get, HttpResponse, post, web::{Path, Data, Json}, patch, delete};
+use actix_web::{get, HttpResponse, post, web::{Path, Data, Json}};
 use serde::Deserialize;
 use crate::config::db::Pool;
-use crate::model::book::{Book, NewBook, NewPage, Page};
+use crate::model::book::{Book, NewBook, Page};
 use crate::service::book_service::{create_full_book, get_book_list, get_book_with_pages};
-use std::mem::take;
 
 
 #[derive(Deserialize)]

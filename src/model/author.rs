@@ -1,4 +1,4 @@
-use diesel::{prelude::*, Insertable, Queryable, result::Error};
+use diesel::{prelude::*, Insertable, Queryable};
 use diesel::result::Error::DatabaseError;
 use crate::schema::authors::{
     self,

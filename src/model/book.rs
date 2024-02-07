@@ -1,4 +1,4 @@
-use diesel::{pg::Pg, prelude::*, Insertable, Queryable};
+use diesel::{prelude::*, Insertable, Queryable};
 use crate::schema::{books::{
     self,
     dsl::*

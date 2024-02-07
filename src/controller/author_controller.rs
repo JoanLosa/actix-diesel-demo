@@ -1,6 +1,6 @@
-use actix_web::{get, HttpResponse, post, web::{Path, Data, Json}, patch, delete};
+use actix_web::{HttpResponse, post, web::{Data, Json}};
 use crate::config::db::Pool;
-use crate::model::author::{Author, NewAuthor};
+use crate::model::author::NewAuthor;
 use crate::service::author_service;
 
 #[post("/")]
