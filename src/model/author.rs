@@ -23,7 +23,8 @@ impl Author {
 
     pub fn create_author(new_author: NewAuthor, conn: &mut PgConnection) -> Result<Author, String> {
 
-        match new_author.insert_into(author_table).get_result(conn) {
+        let result: QueryResult<Author> = new_author.insert_into(author_table).get_result(conn);
+        match result {
             Ok(author) => Ok(author),
             Err(err) => match err {
                 DatabaseError(_kind, info) =>

@@ -5,8 +5,9 @@ use crate::service::author_service;
 
 #[post("/")]
 pub async fn create_author(request: Json<NewAuthor>, pool: Data<Pool>) -> HttpResponse {
-
-    match author_service::create_author(request.0, &pool) {
+    
+    let result =  author_service::create_author(request.0, &pool);
+    match result {
         Ok(author) => HttpResponse::Ok().json(author),
         Err(message) => HttpResponse::BadRequest().body(message)
     }
