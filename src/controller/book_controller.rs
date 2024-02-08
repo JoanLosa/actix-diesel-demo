@@ -31,7 +31,7 @@ pub struct FullBook {
 #[get("/{id}")]
 pub async fn get_book_by_id(book_id: Path<BookID>, pool: Data<Pool>) -> HttpResponse {
 
-    let book = get_book_with_pages(book_id.id, &pool);
+    let book: (Book, Vec<Page>) = get_book_with_pages(book_id.id, &pool);
     HttpResponse::Ok().json(book)
 }
 
@@ -45,7 +45,7 @@ pub async fn get_books(book_params: Path<BookParams>, pool: Data<Pool>) -> HttpR
 #[post("/")]
 pub async fn create_books(full_book: Json<FullBook>, pool: Data<Pool>) -> HttpResponse {
 
-    let new_book = NewBook {title: full_book.title.clone(), author_id: full_book.author_id};
+    let new_book: NewBook = NewBook {title: full_book.title.clone(), author_id: full_book.author_id};
     let result = create_full_book(new_book, &full_book.pages,&pool);
     HttpResponse::Ok().json(result)
 }
