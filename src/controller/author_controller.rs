@@ -1,5 +1,5 @@
 use actix_web::{post, web::{Data, Json}};
-use crate::{config::db::Pool, model::author::MyError};
+use crate::{config::db::Pool, model::custom_errors::MyError};
 use crate::model::author::{NewAuthor, Author};
 use crate::service::author_service;
 
