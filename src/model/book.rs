@@ -1,13 +1,15 @@
-use diesel::{prelude::*, Insertable, Queryable};
+use diesel::{prelude::*, result::Error, Insertable, Queryable};
 use crate::schema::{books::{
     self,
     dsl::*
 }, pages::{
     self as my_pages,
     dsl::*
-}};
+}, authors};
 use serde::{Serialize, Deserialize};
 use crate::controller::book_controller::PageData;
+use dto_mapper::DtoMapper;
+use super::{author::Author, custom_errors::MyError, dtos::FullBookDTO};
 
 #[derive(Insertable, Deserialize)]
 #[diesel(table_name = books)]
@@ -16,8 +18,10 @@ pub struct NewBook {
     pub author_id: i32,
 }
 
-#[derive(Queryable, Identifiable, Selectable, Serialize, Debug, PartialEq)]
+#[derive(Queryable, Identifiable, Selectable, Serialize, Debug, PartialEq, DtoMapper, Default, Clone)]
 #[diesel(table_name = books)]
+#[diesel(belongs_to(Author))]
+#[mapper(dto = "BookDTO", ignore=["author_id"], derive=(Debug, Clone, PartialEq, Serialize))]
 pub struct Book {
     pub id: i32,
     pub title: String,
@@ -44,9 +48,27 @@ pub struct Page {
 
 impl Book {
 
+    pub fn get_with_author(pk: i32, conn: &mut PgConnection) -> Result<FullBookDTO, MyError> {
+        let book_with_author: Result<Option<(Book, Author)>, Error>  = books::table
+            .inner_join(authors::table)
+            .filter(authors::id.eq(books::author_id).and(books::id.eq(pk)))
+            .first(conn)
+            .optional();
+
+        match book_with_author {
+            Ok(option) => match option {
+                Some((book, author)) => Ok(FullBookDTO {book: book.clone().into(),
+                    author: author.clone().into()}),
+                None => Err(MyError::NotHere),
+            },
+            Err(error) => Err(MyError::InternalError),
+        }
+    }
+
     pub fn with_pages(pk: i32, conn: &mut PgConnection) -> (Book, Vec<Page>) {
 
         let book: Book = books.find(pk).first(conn).expect("Error getting book");
+        let book_dto : BookDTO = book.clone().into();
         let res: Vec<Page> = Page::belonging_to(&book)
             .select(Page::as_select())
             .load(conn).expect("Error loading pages");

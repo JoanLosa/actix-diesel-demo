@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate derive_builder;
+
 mod controller;
 mod model;
 mod service;
