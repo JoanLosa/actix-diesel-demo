@@ -1,8 +1,8 @@
 use actix_web::{get, HttpResponse, post, web::{Path, Data, Json}};
 use serde::Deserialize;
-use crate::config::db::Pool;
+use crate::{config::db::Pool, model::{custom_errors::MyError, dtos::FullBookDTO}};
 use crate::model::book::{Book, NewBook, Page};
-use crate::service::book_service::{create_full_book, get_book_list, get_book_with_pages};
+use crate::service::book_service;
 
 
 #[derive(Deserialize)]
@@ -29,16 +29,13 @@ pub struct FullBook {
 }
 
 #[get("/{id}")]
-pub async fn get_book_by_id(book_id: Path<BookID>, pool: Data<Pool>) -> HttpResponse {
-
-    let book: (Book, Vec<Page>) = get_book_with_pages(book_id.id, &pool);
-    HttpResponse::Ok().json(book)
+pub async fn get_book_by_id(book_id: Path<BookID>, pool: Data<Pool>) -> Result<FullBookDTO, MyError> {    
+    book_service::get_book_with_author(book_id.id, &pool)
 }
 
 #[get("/")]
 pub async fn get_books(book_params: Path<BookParams>, pool: Data<Pool>) -> HttpResponse {
-
-    let books: Vec<(Book, Vec<Page>)> = get_book_list(book_params.limit, &pool);
+    let books: Vec<(Book, Vec<Page>)> = book_service::get_book_list(book_params.limit, &pool);
     HttpResponse::Ok().json(books)
 }
 
@@ -46,6 +43,6 @@ pub async fn get_books(book_params: Path<BookParams>, pool: Data<Pool>) -> HttpR
 pub async fn create_books(full_book: Json<FullBook>, pool: Data<Pool>) -> HttpResponse {
 
     let new_book: NewBook = NewBook {title: full_book.title.clone(), author_id: full_book.author_id};
-    let result = create_full_book(new_book, &full_book.pages,&pool);
+    let result = book_service::create_full_book(new_book, &full_book.pages,&pool);
     HttpResponse::Ok().json(result)
 }
