@@ -1,3 +1,4 @@
+use actix_web::{Responder, body::BoxBody, HttpResponse};
 use diesel::{prelude::*, result::Error, Insertable, Queryable};
 use crate::schema::{books::{
     self,
@@ -9,7 +10,7 @@ use crate::schema::{books::{
 use serde::{Serialize, Deserialize};
 use crate::controller::book_controller::PageData;
 use dto_mapper::DtoMapper;
-use super::{author::Author, custom_errors::MyError, dtos::FullBookDTO};
+use super::{author::Author, custom_errors::MyError, dtos::FullBookDTO, traits::Saveable};
 
 #[derive(Insertable, Deserialize)]
 #[diesel(table_name = books)]
@@ -36,9 +37,10 @@ pub struct NewPage {
     pub book_id: i32,
 }
 
-#[derive(Queryable, Selectable, Identifiable, Associations, Serialize)]
+#[derive(Queryable, Selectable, Identifiable, Associations, Serialize, DtoMapper, Default, Clone)]
 #[diesel(belongs_to(Book))]
 #[diesel(table_name = my_pages)]
+#[mapper(dto = "PageDTO", ignore=["id","book_id"], derive=(Debug, Clone, PartialEq, Serialize))]
 pub struct Page {
     pub id: i32,
     pub page_number: i32,
@@ -68,7 +70,6 @@ impl Book {
     pub fn with_pages(pk: i32, conn: &mut PgConnection) -> (Book, Vec<Page>) {
 
         let book: Book = books.find(pk).first(conn).expect("Error getting book");
-        let book_dto : BookDTO = book.clone().into();
         let res: Vec<Page> = Page::belonging_to(&book)
             .select(Page::as_select())
             .load(conn).expect("Error loading pages");
@@ -105,3 +106,23 @@ impl Book {
         (book, res)
     }
 }
+
+impl Responder for BookDTO {
+    type Body = BoxBody;
+
+    fn respond_to(self, _req: &actix_web::HttpRequest) -> HttpResponse<Self::Body> {
+        HttpResponse::Ok().json(&self)
+    }
+}
+
+impl Saveable<BookDTO> for NewBook {
+
+    fn save(self, conn: &mut PgConnection) -> Result<BookDTO, MyError> {
+        let result: Result<Book, Error> = self.insert_into(books::table).get_result(conn);
+        match result {
+            Ok(r) => Ok(r.clone().into()),
+            Err(_err) => Err(MyError::InternalError),
+        }
+    }
+}
+

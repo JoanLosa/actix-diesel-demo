@@ -1,4 +1,4 @@
-use diesel::{prelude::*, Insertable, Queryable};
+use diesel::{prelude::*, result::Error, Insertable, Queryable};
 use crate::schema::authors::{
     self,
     dsl::authors as author_table,
@@ -8,7 +8,7 @@ use actix_web::{Responder, HttpResponse, error,
     http::{header::ContentType, StatusCode},
     body::BoxBody};
 use dto_mapper::DtoMapper;
-use super::custom_errors::MyError;
+use super::{custom_errors::MyError, traits::Saveable};
 
 #[derive(Queryable, Identifiable, Selectable, Serialize, DtoMapper, Default, Clone)]
 #[diesel(table_name = authors)]
@@ -32,12 +32,31 @@ impl Responder for Author {
     }
 }
 
+impl Responder for AuthorDTO {
+    type Body = BoxBody;
+
+    fn respond_to(self, _req: &actix_web::HttpRequest) -> HttpResponse<Self::Body> {
+        HttpResponse::Ok().json(&self)
+    }
+}
+
 impl Author {
 
     pub fn create_author(new_author: NewAuthor, conn: &mut PgConnection) -> Result<Author, MyError> {
         let result = new_author.insert_into(author_table).get_result(conn);
         match result {
             Ok(author) => Ok(author),
+            Err(_err) =>  Err(MyError::InternalError),     
+        }
+    }
+}
+
+impl Saveable<AuthorDTO> for NewAuthor {
+    
+    fn save(self, conn: &mut PgConnection) -> Result<AuthorDTO, MyError> {
+        let result: Result<Author, Error> = self.insert_into(author_table).get_result(conn);
+        match result {
+            Ok(author) => Ok(author.clone().into()),
             Err(_err) =>  Err(MyError::InternalError),     
         }
     }
