@@ -14,6 +14,7 @@ pub fn config_services(cfg: &mut web::ServiceConfig) {
         .service(get_book_by_id)
         .service(get_books)
         .service(create_books)
+        .service(insert_book)
     ).service(scope("/authors")
         .service(create_author));
 }
